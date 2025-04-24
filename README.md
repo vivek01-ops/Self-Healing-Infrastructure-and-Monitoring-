@@ -26,6 +26,7 @@ This project demonstrates automated service recovery using Prometheus, Alertmana
 
 ## 📦 File Structure
 
+```
 self-healing-infra/
 ├── configs/
 │   ├── prometheus.yml                  # Prometheus configuration file
@@ -50,3 +51,4 @@ self-healing-infra/
 │
 ├── docker-compose.yml                 # Docker Compose file to spin up everything
 └── README.md                          # Optional: Docs/instructions
+```
