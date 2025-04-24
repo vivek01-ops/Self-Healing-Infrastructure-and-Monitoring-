@@ -1,0 +1,72 @@
+version: '3'
+
+services:
+  # NGINX Exporter
+  nginx_exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    container_name: nginx-exporter
+    ports:
+      - "9113:9113"
+    volumes:
+      - ./nginx_prometheus_exporter.sh:/nginx_prometheus_exporter.sh  # Mount script if you want to run it inside
+    command: /bin/bash /nginx_prometheus_exporter.sh  # Run the script at container start
+    environment:
+      - NGINX_SCRAPE_URI=http://nginx:80/stub_status  # Make sure the URI is correct
+    networks:
+      - monitoring
+
+
+  # NGINX Web Server
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "8080:80"  # host:container
+    volumes:
+      - ./nginx:/etc/nginx
+    networks:
+      - monitoring
+    depends_on:
+      - nginx_exporter
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: prometheus
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  # Alertmanager
+  alertmanager:
+    image: prom/alertmanager:v0.24.0
+    container_name: alertmanager
+    volumes:
+      - ./configs/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    networks:
+      - monitoring
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+
+  # Webhook Server (Flask)
+  webhook_server:
+    build: ./webhook
+    container_name: webhook-server
+    ports:
+      - "5001:5001"
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+      - alertmanager
+
+networks:
+  monitoring:
+    driver: bridge
